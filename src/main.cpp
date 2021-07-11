@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <stdio.h>
 #include <string.h>
+#include <PWMServo.h>
 
 #define arr_size(arr) (sizeof(arr)/sizeof((arr)[0]))
 
@@ -11,16 +12,30 @@ const int COUNTING_TIMEOUT = 1000;
 int PASSWORD[] = {3, 2, 1};
 const int PWD_N = arr_size(PASSWORD);
 
+PWMServo s;
+
+void servo_release(bool yes) {
+  if (yes) {
+    s.write(180);
+  }
+  else {
+    s.write(50);
+  }
+}
+
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(SOUND_PIN_D, INPUT);
 
     Serial.begin(115200);
+    s.attach(23);
+    servo_release(false);
 }
 
 inline bool sound() {
     return digitalRead(SOUND_PIN_D);
 }
+
 
 void wait_for_knock() {
     while (1) {
@@ -30,8 +45,11 @@ void wait_for_knock() {
 
         // Then confirm after a delay
         delayMicroseconds(100);
-        if (sound())
+        if (sound()) {
+            // Debounce
+            delay(100);
             return;
+        }
         else
             continue;
     }
@@ -77,7 +95,10 @@ void loop() {
         if (arrays_equal(pwd_input, PASSWORD, PWD_N))
         {
           digitalWrite(LED_BUILTIN, 1);
-          delay(1000);
+          
+          servo_release(true);
+          delay(2000);
+          servo_release(false);
           digitalWrite(LED_BUILTIN, 0);
         }
 
