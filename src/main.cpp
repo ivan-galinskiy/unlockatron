@@ -5,15 +5,24 @@
 
 #define arr_size(arr) (sizeof(arr)/sizeof((arr)[0]))
 
+// The digital output of the mike module will be connected to the below pin
 const int SOUND_PIN_D = 2;
+
+// The servo's control line will be connected to the below pin
+const int SERVO_PIN = 23;
+
+// If a timeout more than this is reached after a knock, it indicates that
+// thenext "digit" is being input
 const int COUNTING_TIMEOUT = 1000;
 
+// Hardcoded password consisting of numbers of knocks
 // Note: order is reversed
 int PASSWORD[] = {3, 2, 1};
 const int PWD_N = arr_size(PASSWORD);
 
 PWMServo s;
 
+// A helper function to lower the servo arm and let the keys drop
 void servo_release(bool yes) {
   if (yes) {
     s.write(180);
@@ -28,15 +37,16 @@ void setup() {
     pinMode(SOUND_PIN_D, INPUT);
 
     Serial.begin(115200);
-    s.attach(23);
+    s.attach(SERVO_PIN);
     servo_release(false);
 }
 
+// Just a helper to see if the sound level is above threshold
 inline bool sound() {
     return digitalRead(SOUND_PIN_D);
 }
 
-
+// Block and wait for a knock to happen
 void wait_for_knock() {
     while (1) {
         // Wait for the first edge
@@ -55,12 +65,14 @@ void wait_for_knock() {
     }
 }
 
+// Shift the elements of an array to the left
 void lshift_array(int *arr, int N) {
   for (int i = N - 1; i > 0; i--) {
     arr[i] = arr[i - 1];
   }
 }
 
+// Check that the arrays have the same elements
 bool arrays_equal(int *a, int *b, int N) {
   for (int i = 0; i < N; i++) {
     if (a[i] != b[i])
@@ -94,6 +106,7 @@ void loop() {
         t0 = t;
         if (arrays_equal(pwd_input, PASSWORD, PWD_N))
         {
+          // ACCESS GRANTED
           digitalWrite(LED_BUILTIN, 1);
           
           servo_release(true);
